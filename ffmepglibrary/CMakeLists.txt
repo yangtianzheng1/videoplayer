@@ -19,12 +19,12 @@ set_target_properties( avcodec
         PROPERTIES IMPORTED_LOCATION
         ${LIBS_DIR}/libavcodec.so)
 
-#add_library( avfilter
-#        SHARED
-#        IMPORTED)
-#set_target_properties( avfilter
-#        PROPERTIES IMPORTED_LOCATION
-#        ${LIBS_DIR}/libavfilter.so)
+add_library( avfilter
+        SHARED
+        IMPORTED)
+set_target_properties( avfilter
+        PROPERTIES IMPORTED_LOCATION
+        ${LIBS_DIR}/libavfilter.so)
 
 add_library( avformat
         SHARED
@@ -71,7 +71,7 @@ target_link_libraries(
         avutil
         swresample
         avcodec
-#        avfilter
+        avfilter
         swscale
         avformat
         # Links the target library to the log library
