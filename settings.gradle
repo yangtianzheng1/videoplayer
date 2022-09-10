@@ -14,3 +14,5 @@ dependencyResolutionManagement {
 }
 rootProject.name = "VideoPlayer"
 include ':app'
+include ':ffmepg'
+include ':ffmepglibrary'
