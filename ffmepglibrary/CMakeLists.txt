@@ -62,6 +62,8 @@ add_library(
         native-lib
         SHARED
         src/main/cpp/native-lib.cpp
+        src/main/cpp/VideoPlayer.cpp
+        src/main/cpp/VideoPlayer.h
 )
 # 指定编译目标库时，cmake要链接的库
 target_link_libraries(

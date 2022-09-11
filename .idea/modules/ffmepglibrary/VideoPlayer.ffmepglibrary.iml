@@ -43,6 +43,7 @@
       <sourceFolder url="file://$MODULE_DIR$/../../../ffmepglibrary/src/androidTest/java" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/../../../ffmepglibrary/src/main/java" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/../../../ffmepglibrary/src/test/java" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../ffmepglibrary/src/main/cpp" type="native-Source-root" />
       <excludeFolder url="file://$MODULE_DIR$/../../../ffmepglibrary/.gradle" />
       <excludeFolder url="file://$MODULE_DIR$/../../../ffmepglibrary/build" />
       <excludeFolder url="file://$MODULE_DIR$/../../../ffmepglibrary/.externalNativeBuild" />
