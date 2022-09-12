@@ -78,4 +78,8 @@ target_link_libraries(
         avformat
         # Links the target library to the log library
         # included in the NDK.
+
+        #android NDK 代码
+        android
+
         ${log-lib} )

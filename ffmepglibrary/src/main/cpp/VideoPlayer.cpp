@@ -13,9 +13,10 @@
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR,TAG ,__VA_ARGS__) // 定义LOGE类型
 #define LOGF(...) __android_log_print(ANDROID_LOG_FATAL,TAG ,__VA_ARGS__) // 定义LOGF类型
 
-int VideoPlayer::init(const char* url){
+int VideoPlayer::init(const char* url, ANativeWindow* window, int width, int height){
     m_url = url;
     int result = -1;
+
     m_AVFormatContext = avformat_alloc_context();
     if (m_AVFormatContext == nullptr){
         m_AVFormatContext = avformat_alloc_context();
@@ -55,6 +56,21 @@ int VideoPlayer::init(const char* url){
     m_Packet = av_packet_alloc();
     m_Frame = av_frame_alloc();
 
+    m_NativeWindow = window;
+    ANativeWindow_setBuffersGeometry(m_NativeWindow, width, height, WINDOW_FORMAT_RGBA_8888);
+
+    m_VideoWidth = m_AVCodecContext->width;
+    m_VideoHeight = m_AVCodecContext->height;
+    m_RGBAFrame = av_frame_alloc();
+
+    int bufferSize = av_image_get_buffer_size(AV_PIX_FMT_RGBA, m_VideoWidth, m_VideoHeight, 1);
+    m_FrameBuffer = static_cast<uint8_t *>(av_malloc(bufferSize * sizeof (uint8_t)));
+    av_image_fill_arrays(m_RGBAFrame->data, m_RGBAFrame->linesize, m_FrameBuffer, AV_PIX_FMT_RGBA,
+                         m_VideoWidth, m_VideoHeight, 1);
+    m_SwsContext = sws_getContext(m_VideoWidth, m_VideoHeight, m_AVCodecContext->pix_fmt,
+                                  m_VideoWidth, m_VideoHeight, AV_PIX_FMT_RGBA,
+                                  SWS_BICUBIC, nullptr, nullptr, nullptr);
+
     return result;
 }
 
@@ -67,6 +83,17 @@ void VideoPlayer::start(){
             }
             while (avcodec_receive_frame(m_AVCodecContext, m_Frame) == 0){
                 LOGD("m_Frame pts is %ld", m_Frame->pts);
+
+                sws_scale(m_SwsContext, m_Frame->data, m_Frame->linesize, 0,
+                          m_VideoHeight, m_RGBAFrame->data, m_RGBAFrame->linesize);
+                ANativeWindow_lock(m_NativeWindow, &m_NativeWindowBuffer, nullptr);
+                uint8_t *dstBuffer = static_cast<uint8_t *>(m_NativeWindowBuffer.bits);
+                int srcLineSize = m_RGBAFrame->linesize[0];
+                int dstLineSize = m_NativeWindowBuffer.stride * 4;
+                for (int i = 0; i < m_VideoHeight; ++i) {
+                    memcpy(dstBuffer + i * dstLineSize, m_FrameBuffer + i * srcLineSize, srcLineSize);
+                }
+                ANativeWindow_unlockAndPost(m_NativeWindow);
             }
         }
         av_packet_unref(m_Packet);

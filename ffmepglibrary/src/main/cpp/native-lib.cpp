@@ -6,6 +6,9 @@
 #include <string>
 #include <unistd.h>
 #include "VideoPlayer.h"
+#include <android/native_window.h>
+#include <android/native_window_jni.h>
+
 
 extern "C" {
 #include "include/libavcodec/avcodec.h"
@@ -33,7 +36,8 @@ JNI_FUNC(jint, VideoPlayer, init)(JNI_ARGS, jstring m_local_path, jobject surfac
                                   jint height) {
     const char *url = env->GetStringUTFChars(m_local_path, nullptr);
     videoPlayer = new VideoPlayer();
-    int result = videoPlayer->init(url);
+    ANativeWindow* window = ANativeWindow_fromSurface(env, surface);
+    int result = videoPlayer->init(url, window, width, height);
     return result;
 }
 
