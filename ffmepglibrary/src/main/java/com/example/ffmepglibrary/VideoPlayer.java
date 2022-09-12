@@ -21,9 +21,11 @@ public class VideoPlayer {
         handler.post(new Runnable() {
             @Override
             public void run() {
-                init(localPath, surface, width, height);
-                start();
-                release();
+                int result = init(localPath, surface, width, height);
+                if (result >= 0){
+                    start();
+                    release();
+                }
             }
         });
     }

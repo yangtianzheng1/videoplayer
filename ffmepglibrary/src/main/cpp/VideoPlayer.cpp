@@ -17,6 +17,9 @@ int VideoPlayer::init(const char* url){
     m_url = url;
     int result = -1;
     m_AVFormatContext = avformat_alloc_context();
+    if (m_AVFormatContext == nullptr){
+        m_AVFormatContext = avformat_alloc_context();
+    }
     if(avformat_open_input(&m_AVFormatContext, m_url, nullptr, nullptr) != 0){
         LOGE("avformat_open_input fail");
         return result;
