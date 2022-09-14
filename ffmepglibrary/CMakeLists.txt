@@ -69,6 +69,8 @@ add_library(
         src/main/cpp/OpenSLRender.cpp
         src/main/cpp/OpenSLRender.h
         src/main/cpp/AudioFrame.h
+        src/main/cpp/AVPacketQueue.h
+        src/main/cpp/AVPacketQueue.cpp
 )
 # 指定编译目标库时，cmake要链接的库
 target_link_libraries(
