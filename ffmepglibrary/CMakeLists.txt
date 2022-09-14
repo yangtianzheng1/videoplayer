@@ -64,6 +64,11 @@ add_library(
         src/main/cpp/native-lib.cpp
         src/main/cpp/VideoPlayer.cpp
         src/main/cpp/VideoPlayer.h
+        src/main/cpp/AudioPlayer.cpp
+        src/main/cpp/AudioPlayer.h
+        src/main/cpp/OpenSLRender.cpp
+        src/main/cpp/OpenSLRender.h
+        src/main/cpp/AudioFrame.h
 )
 # 指定编译目标库时，cmake要链接的库
 target_link_libraries(
@@ -80,6 +85,7 @@ target_link_libraries(
         # included in the NDK.
 
         #android NDK 代码
+        OpenSLES
         android
 
         ${log-lib} )

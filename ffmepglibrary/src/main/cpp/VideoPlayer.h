@@ -35,10 +35,9 @@ private:
     ANativeWindow* m_NativeWindow;
     int m_VideoWidth;
     int m_VideoHeight;
-    AVFrame *m_RGBAFrame;
-    const uint8_t *m_FrameBuffer;
-    SwsContext *m_SwsContext;
-    SwrContext *m_SwrContext;
+    AVFrame* m_RGBAFrame;
+    uint8_t* m_FrameBuffer;
+    SwsContext* m_SwsContext;
     ANativeWindow_Buffer m_NativeWindowBuffer;
 };
 

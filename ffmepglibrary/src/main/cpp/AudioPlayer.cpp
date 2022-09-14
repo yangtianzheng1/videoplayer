@@ -1,10 +1,12 @@
 //
-// Created by 杨天正 on 2022/9/11.
+// Created by 杨天正 on 2022/9/12.
 //
+
 #include <stdio.h>
 #include <string.h>
 #include <android/log.h>
-#include "VideoPlayer.h"
+#include "AudioPlayer.h"
+#include "OpenSLRender.h"
 
 #define TAG "VideoDecoder" // 这个是自定义的LOG的标识
 #define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG,TAG ,__VA_ARGS__) // 定义LOGD类型
@@ -13,10 +15,9 @@
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR,TAG ,__VA_ARGS__) // 定义LOGE类型
 #define LOGF(...) __android_log_print(ANDROID_LOG_FATAL,TAG ,__VA_ARGS__) // 定义LOGF类型
 
-int VideoPlayer::init(const char* url, ANativeWindow* window, int width, int height){
+int AudioPlayer::init(const char *url) {
     m_url = url;
     int result = -1;
-
     m_AVFormatContext = avformat_alloc_context();
     if (m_AVFormatContext == nullptr){
         m_AVFormatContext = avformat_alloc_context();
@@ -28,7 +29,7 @@ int VideoPlayer::init(const char* url, ANativeWindow* window, int width, int hei
     if(avformat_find_stream_info(m_AVFormatContext, nullptr) < 0){
         return result;
     }
-    m_StreamIndex = av_find_best_stream(m_AVFormatContext,AVMEDIA_TYPE_VIDEO,-1,-1, nullptr, 0);
+    m_StreamIndex = av_find_best_stream(m_AVFormatContext,AVMEDIA_TYPE_AUDIO,-1,-1, nullptr, 0);
     if(m_StreamIndex == -1){
         return result;
     }
@@ -41,6 +42,7 @@ int VideoPlayer::init(const char* url, ANativeWindow* window, int width, int hei
     if(avcodec_parameters_to_context(m_AVCodecContext, codecParameters) != 0){
         return result;
     }
+
     AVDictionary *pAVDictionary = nullptr;
     av_dict_set(&pAVDictionary, "buffer_size", "1024000", 0);
     av_dict_set(&pAVDictionary, "stimeout", "20000000",0);
@@ -51,30 +53,33 @@ int VideoPlayer::init(const char* url, ANativeWindow* window, int width, int hei
     if(result < 0){
         return result;
     }
-
     m_Duration = m_AVFormatContext->duration/AV_TIME_BASE*1000;
     m_Packet = av_packet_alloc();
     m_Frame = av_frame_alloc();
 
-    m_NativeWindow = window;
-    ANativeWindow_setBuffersGeometry(m_NativeWindow, width, height, WINDOW_FORMAT_RGBA_8888);
+    m_SwrContext = swr_alloc();
+    av_opt_set_int(m_SwrContext, "in_channel_layout",(int64_t)m_AVCodecContext->channel_layout, 0);
+    av_opt_set_int(m_SwrContext, "out_channel_layout", AUDIO_DST_CHANNEL_LAYOUT, 0);
+    av_opt_set_int(m_SwrContext, "in_sample_rate", m_AVCodecContext->sample_rate, 0);
+    av_opt_set_int(m_SwrContext,"out_sample_rate", AUDIO_DST_SAMPLE_RATE, 0);
+    av_opt_set_sample_fmt(m_SwrContext, "in_sample_fmt", m_AVCodecContext->sample_fmt, 0);
+    av_opt_set_sample_fmt(m_SwrContext, "out_sample_fmt", AV_SAMPLE_FMT_S16,0);
+    swr_init(m_SwrContext);
 
-    m_VideoWidth = m_AVCodecContext->width;
-    m_VideoHeight = m_AVCodecContext->height;
-    m_RGBAFrame = av_frame_alloc();
+    m_nbSamples = (int)av_rescale_rnd(NB_SAMPLES, AUDIO_DST_SAMPLE_RATE,
+                                 m_AVCodecContext->sample_rate,AV_ROUND_UP);
+    m_BufferSize = av_samples_get_buffer_size(nullptr, AUDIO_DST_CHANNEL_COUNTS,
+                                              m_nbSamples,
+                                              AV_SAMPLE_FMT_S16, 1);
+    m_AudioOutBuffer = (uint8_t*)malloc(m_BufferSize);
 
-    int bufferSize = av_image_get_buffer_size(AV_PIX_FMT_RGBA, m_VideoWidth, m_VideoHeight, 1);
-    m_FrameBuffer = static_cast<uint8_t *>(av_malloc(bufferSize * sizeof (uint8_t)));
-    av_image_fill_arrays(m_RGBAFrame->data, m_RGBAFrame->linesize, m_FrameBuffer, AV_PIX_FMT_RGBA,
-                         m_VideoWidth, m_VideoHeight, 1);
-    m_SwsContext = sws_getContext(m_VideoWidth, m_VideoHeight, m_AVCodecContext->pix_fmt,
-                                  m_VideoWidth, m_VideoHeight, AV_PIX_FMT_RGBA,
-                                  SWS_BICUBIC, nullptr, nullptr, nullptr);
+    openSlRender = new OpenSLRender();
+    openSlRender->init();
 
     return result;
 }
 
-void VideoPlayer::start(){
+void AudioPlayer::start() {
     int result = av_read_frame(m_AVFormatContext, m_Packet);
     while (result >= 0){
         if (m_Packet->stream_index == m_StreamIndex){
@@ -83,17 +88,14 @@ void VideoPlayer::start(){
             }
             while (avcodec_receive_frame(m_AVCodecContext, m_Frame) == 0){
                 LOGD("m_Frame pts is %ld", m_Frame->pts);
-
-                sws_scale(m_SwsContext, m_Frame->data, m_Frame->linesize, 0,
-                          m_VideoHeight, m_RGBAFrame->data, m_RGBAFrame->linesize);
-                ANativeWindow_lock(m_NativeWindow, &m_NativeWindowBuffer, nullptr);
-                uint8_t *dstBuffer = static_cast<uint8_t *>(m_NativeWindowBuffer.bits);
-                int srcLineSize = m_RGBAFrame->linesize[0];
-                int dstLineSize = m_NativeWindowBuffer.stride * 4;
-                for (int i = 0; i < m_VideoHeight; ++i) {
-                    memcpy(dstBuffer + i * dstLineSize, m_FrameBuffer + i * srcLineSize, srcLineSize);
+                int temp = swr_convert(m_SwrContext,
+                                       &m_AudioOutBuffer,
+                                       m_BufferSize/2,
+                                       (const uint8_t **)m_Frame->data
+                                       ,m_Frame->nb_samples);
+                if (temp > 0 && openSlRender){
+                    openSlRender->RenderAudioFrame(m_AudioOutBuffer, m_BufferSize);
                 }
-                ANativeWindow_unlockAndPost(m_NativeWindow);
             }
         }
         av_packet_unref(m_Packet);
@@ -101,22 +103,14 @@ void VideoPlayer::start(){
     }
 }
 
-void VideoPlayer::release(){
-    if (m_RGBAFrame != nullptr){
-        av_frame_free(&m_RGBAFrame);
-        m_RGBAFrame = nullptr;
+void AudioPlayer::release() {
+    if (m_AudioOutBuffer != nullptr){
+        free(m_AudioOutBuffer);
+        m_AudioOutBuffer = nullptr;
     }
-    if (m_FrameBuffer != nullptr){
-        free(m_FrameBuffer);
-        m_FrameBuffer = nullptr;
-    }
-    if(m_NativeWindow != nullptr){
-        free(m_NativeWindow);
-        m_NativeWindow = nullptr;
-    }
-    if (m_SwsContext != nullptr){
-        sws_freeContext(m_SwsContext);
-        m_SwsContext = nullptr;
+    if (m_SwrContext != nullptr){
+        swr_free(&m_SwrContext);
+        m_SwrContext = nullptr;
     }
     if (m_Frame != nullptr){
         av_frame_free(&m_Frame);
@@ -126,10 +120,6 @@ void VideoPlayer::release(){
         av_packet_free(&m_Packet);
         m_Packet = nullptr;
     }
-//    if (m_NativeWindowBuffer != nullptr){
-//        free(m_NativeWindowBuffer);
-//        m_NativeWindowBuffer = nullptr;
-//    }
     if (m_AVCodecContext != nullptr){
         avcodec_close(m_AVCodecContext);
         avcodec_free_context(&m_AVCodecContext);

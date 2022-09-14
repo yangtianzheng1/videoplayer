@@ -6,6 +6,7 @@
 #include <string>
 #include <unistd.h>
 #include "VideoPlayer.h"
+#include "AudioPlayer.h"
 #include <android/native_window.h>
 #include <android/native_window_jni.h>
 
@@ -20,6 +21,7 @@ extern "C" {
 #define JNI_ARGS    JNIEnv *env, jobject thiz
 
 VideoPlayer *videoPlayer;
+AudioPlayer *audioPlayer;
 
 extern "C" {
 JNI_FUNC(jstring, FFmepgHelper, getFFmpegVersion)(JNI_ARGS) {
@@ -35,17 +37,21 @@ JNI_FUNC(jstring, FFmepgHelper, getFFmpegConfiguration)(JNI_ARGS) {
 JNI_FUNC(jint, VideoPlayer, init)(JNI_ARGS, jstring m_local_path, jobject surface, jint width,
                                   jint height) {
     const char *url = env->GetStringUTFChars(m_local_path, nullptr);
-    videoPlayer = new VideoPlayer();
-    ANativeWindow* window = ANativeWindow_fromSurface(env, surface);
-    int result = videoPlayer->init(url, window, width, height);
+//    videoPlayer = new VideoPlayer();
+//    ANativeWindow* window = ANativeWindow_fromSurface(env, surface);
+//    int result = videoPlayer->init(url, window, width, height);
+    audioPlayer = new AudioPlayer();
+    int result = audioPlayer->init(url);
     return result;
 }
 
 JNI_FUNC(void, VideoPlayer, start)(JNI_ARGS) {
-    videoPlayer->start();
+//    videoPlayer->start();
+    audioPlayer->start();
 }
 
 JNI_FUNC(void, VideoPlayer, release)(JNI_ARGS) {
-    videoPlayer->release();
+//    videoPlayer->release();
+    audioPlayer->release();
 }
 }
