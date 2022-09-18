@@ -30,7 +30,7 @@ import java.io.File;
 
 import util.GetPathFromUri4kitkat;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements VideoPlayer.EventCallback {
 
     private SurfaceView surfaceView;
     private TextView tvContent;
@@ -135,7 +135,9 @@ public class MainActivity extends AppCompatActivity {
             if (videoPlayer == null){
                 videoPlayer = new VideoPlayer();
             }
-            videoPlayer.playVideo(mp4LocalPath, surface, surfaceWidth, surfaceHeight);
+            videoPlayer.addEventCallback(this);
+            videoPlayer.init();
+            videoPlayer.play(mp4LocalPath, surface, surfaceWidth, surfaceHeight);
         }
     }
 
@@ -153,5 +155,19 @@ public class MainActivity extends AppCompatActivity {
             data = GetPathFromUri4kitkat.getPath(getApplicationContext(), uri);
         }
         return data;
+    }
+
+    @Override
+    public void onPlayerEvent(int msgType, float msgValue) {
+
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (videoPlayer != null){
+            videoPlayer.stop();
+            videoPlayer.destroy();
+        }
     }
 }

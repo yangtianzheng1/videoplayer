@@ -6,38 +6,78 @@ import android.view.Surface;
 
 public class VideoPlayer {
 
-    private String mLocalPath;
-
-    private HandlerThread handlerThread;
-    private Handler handler;
-
-
-    public void playVideo(String localPath, Surface surface, int width, int height){
-        if (handlerThread == null){
-            handlerThread = new HandlerThread("VideoPlayer");
-            handlerThread.start();
-            handler = new Handler(handlerThread.getLooper());
-        }
-        handler.post(new Runnable() {
-            @Override
-            public void run() {
-                int result = init(localPath, surface, width, height);
-                if (result >= 0){
-                    start();
-                    release();
-                }
-            }
-        });
+    static {
+        System.loadLibrary("native-lib");
     }
 
+    public static final int MSG_DECODER_INIT_ERROR      = 0;
+    public static final int MSG_DECODER_READY           = 1;
+    public static final int MSG_DECODER_DONE            = 2;
+    public static final int MSG_REQUEST_RENDER          = 3;
+    public static final int MSG_DECODING_TIME           = 4;
 
-    public void stopVideo(){
-        if (handlerThread != null){
-            handlerThread.quitSafely();
-        }
+    private EventCallback mEventCallback = null;
+
+    private long mNativeEngineCtr = -2;
+
+    public VideoPlayer() {
+        mNativeEngineCtr = nativeCreateMediaPlayEngine();
     }
 
-    private native int init(String mLocalPath , Surface surface, int width, int height);
-    private native void start();
-    private native void release();
+    public void destroy() {
+        nativeDestroy(mNativeEngineCtr);
+    }
+
+    public void init() {
+        nativeInit(mNativeEngineCtr);
+    }
+
+    public void play(String url, Surface surface, int width, int height) {
+        nativePlay(mNativeEngineCtr, url, surface, width, height);
+    }
+
+    public void pause() {
+        nativePause(mNativeEngineCtr);
+    }
+
+    public void stop() {
+        nativeStop(mNativeEngineCtr);
+    }
+
+    public void seekToPosition(float position) {
+        nativeSeekToPosition(mNativeEngineCtr, position);
+    }
+
+    public long getMediaParams(int paramType) {
+        return nativeGetMediaParams(mNativeEngineCtr, paramType);
+    }
+
+    public interface EventCallback {
+        void onPlayerEvent(int msgType, float msgValue);
+    }
+
+    private void playerEventCallback(int msgType, float msgValue) {
+        if (mEventCallback != null)
+            mEventCallback.onPlayerEvent(msgType, msgValue);
+    }
+
+    public void addEventCallback(EventCallback callback) {
+        mEventCallback = callback;
+    }
+
+    public native  long nativeCreateMediaPlayEngine();
+
+    public native  void nativeDestroy(long nativeEngineCtr);
+
+    public native  void nativeInit(long nativeEngineCtr);
+
+    public native  void nativePlay(long nativeEngineCtr,String url, Surface surface, int width, int height);
+
+    public native  void nativePause(long nativeEngineCtr);
+
+    public native  void nativeStop(long nativeEngineCtr);
+
+    public native  void nativeSeekToPosition(long nativeEngineCtr, float position);
+
+    public native  long nativeGetMediaParams(long nativeEngineCtr, int paramType);
 }

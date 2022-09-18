@@ -62,6 +62,8 @@ add_library(
         native-lib
         SHARED
         src/main/cpp/native-lib.cpp
+        src/main/cpp/MediaPlayer.h
+        src/main/cpp/MediaPlayer.cpp
         src/main/cpp/VideoPlayer.cpp
         src/main/cpp/VideoPlayer.h
         src/main/cpp/AudioPlayer.cpp
@@ -71,6 +73,9 @@ add_library(
         src/main/cpp/AudioFrame.h
         src/main/cpp/AVPacketQueue.h
         src/main/cpp/AVPacketQueue.cpp
+        src/main/cpp/MessageCallback.h
+        src/main/cpp/DeMuxer.cpp
+        src/main/cpp/DeMuxer.h
 )
 # 指定编译目标库时，cmake要链接的库
 target_link_libraries(
