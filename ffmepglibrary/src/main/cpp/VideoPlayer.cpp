@@ -333,23 +333,23 @@ void VideoPlayer::AVSync() {
         }
     }
 
-    long curSysTime = GetSysCurrentTime();
-    //基于系统时钟计算从开始播放流逝的时间
-    long elapsedTime = curSysTime - m_StartTimeStamp;
-
-    if(m_MsgContext && m_MsgCallback)
-        m_MsgCallback(m_MsgContext, MSG_DECODING_TIME, m_CurTimeStamp * 1.0f / 1000);
-
-    long delay = 0;
-    //向系统时钟同步
-    if(m_CurTimeStamp > elapsedTime) {
-        //休眠时间
-        auto sleepTime = static_cast<unsigned int>(m_CurTimeStamp - elapsedTime);//ms
-        //限制休眠时间不能过长
-        sleepTime = sleepTime > DELAY_THRESHOLD ? DELAY_THRESHOLD :  sleepTime;
-        av_usleep(sleepTime * 1000);
-    }
-    delay = elapsedTime - m_CurTimeStamp;
+//    long curSysTime = GetSysCurrentTime();
+//    //基于系统时钟计算从开始播放流逝的时间
+//    long elapsedTime = curSysTime - m_StartTimeStamp;
+//
+//    if(m_MsgContext && m_MsgCallback)
+//        m_MsgCallback(m_MsgContext, MSG_DECODING_TIME, m_CurTimeStamp * 1.0f / 1000);
+//
+//    long delay = 0;
+//    //向系统时钟同步
+//    if(m_CurTimeStamp > elapsedTime) {
+//        //休眠时间
+//        auto sleepTime = static_cast<unsigned int>(m_CurTimeStamp - elapsedTime);//ms
+//        //限制休眠时间不能过长
+//        sleepTime = sleepTime > DELAY_THRESHOLD ? DELAY_THRESHOLD :  sleepTime;
+//        av_usleep(sleepTime * 1000);
+//    }
+//    delay = elapsedTime - m_CurTimeStamp;
 }
 
 void VideoPlayer::clearCache() {

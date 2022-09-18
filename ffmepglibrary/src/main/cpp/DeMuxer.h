@@ -16,6 +16,7 @@ extern "C" {
 #include <thread>
 #include "VideoPlayer.h"
 #include "MessageCallback.h"
+#include "AudioPlayer.h"
 #include <android/native_window.h>
 
 using namespace std;
@@ -27,6 +28,7 @@ private:
     AVFormatContext* m_AVFormatContext = nullptr;
     thread* decoderThread = nullptr;
     VideoPlayer* m_VideoPlayer = nullptr;
+    AudioPlayer* m_AudioPlayer = nullptr;
 
     //解码器状态
     volatile DecoderState  m_DecoderState = STATE_UNKNOWN;

@@ -6,10 +6,13 @@
 
 void DeMuxer::init(DecoderType decoderType) {
     m_AVFormatContext = avformat_alloc_context();
+    m_AudioPlayer = new AudioPlayer();
+    m_AudioPlayer->init();
+
     m_VideoPlayer = new VideoPlayer();
     m_VideoPlayer->init();
-//    m_VideoPlayer->SetAVSyncCallback(m_AudioDecoder,
-//                                      AudioDecoder::GetVideoDecoderTimestampForAVSync);
+    m_VideoPlayer->SetAVSyncCallback(m_AudioPlayer,
+                                      AudioPlayer::GetVideoDecoderTimestampForAVSync);
 }
 
 void DeMuxer::unInit() {
@@ -19,6 +22,11 @@ void DeMuxer::unInit() {
         delete decoderThread;
         decoderThread = nullptr;
     }
+    if (m_AudioPlayer) {
+        delete m_AudioPlayer;
+        m_AudioPlayer = nullptr;
+    }
+
     if (m_VideoPlayer) {
         delete m_VideoPlayer;
         m_VideoPlayer = nullptr;
@@ -63,10 +71,10 @@ void DeMuxer::start(const char *url, ANativeWindow* window, int width, int heigh
 
         m_Duration = m_AVFormatContext->duration / AV_TIME_BASE * 1000;//us to ms
 
-//        m_AudioDecoder->setStreamIdx(m_audio_streamIndex);
+        m_AudioPlayer->setStreamIdx(m_audio_streamIndex);
         m_VideoPlayer->setStreamIdx(m_video_streamIndex);
 
-//        m_AudioDecoder->start(m_AVFormatContext);
+        m_AudioPlayer->start(m_AVFormatContext);
         m_VideoPlayer->start(m_AVFormatContext, window, width, height);
 
     } while (false);
@@ -89,14 +97,14 @@ void DeMuxer::stop() {
         decoderThread = nullptr;
     }
     m_VideoPlayer->stop();
-//    m_AudioDecoder->stop();
+    m_AudioPlayer->stop();
 }
 
 void DeMuxer::pause() {
     unique_lock<mutex> lock(m_Mutex);
     m_DecoderState = STATE_PAUSE;
     m_VideoPlayer->pause();
-//    m_AudioDecoder->pause();
+    m_AudioPlayer->pause();
 }
 
 void DeMuxer::resume() {
@@ -104,7 +112,7 @@ void DeMuxer::resume() {
     m_DecoderState = STATE_DECODING;
     m_Cond.notify_all();
     m_VideoPlayer->resume();
-//    m_AudioDecoder->resume();
+    m_AudioPlayer->resume();
 }
 
 
@@ -116,13 +124,12 @@ void DeMuxer::seekToPosition(float position) {
 }
 
 long DeMuxer::getCurrentPosition() {
-//    return m_AudioDecoder->getCurrentPosition();
-    return 0;
+    return m_AudioPlayer->getCurrentPosition();
 }
 
 void DeMuxer::setMessageCallback(void *context, MessageCallback callback) {
     m_VideoPlayer->setMessageCallback(context, callback);
-//    m_AudioDecoder->setMessageCallback(context, callback);
+    m_AudioPlayer->setMessageCallback(context, callback);
 }
 
 void DeMuxer::doAVDecoding(DeMuxer *deMuxer) {
@@ -163,7 +170,7 @@ int DeMuxer::decodeOnePacket() {
             m_SeekSuccess = false;
         } else {
             m_VideoPlayer->clearCache();
-//            m_AudioDecoder->clearCache();
+            m_AudioPlayer->clearCache();
             m_SeekSuccess = true;
             m_SeekPosition = -1;
         }
@@ -173,16 +180,18 @@ int DeMuxer::decodeOnePacket() {
     int result = av_read_frame(m_AVFormatContext, &avPacket);
     if (result >= 0){
         int buffersizeVideo = m_VideoPlayer->getBufferSize();
-//        int buffersizeAudio = m_AudioDecoder->getBufferSize();
-        while ((buffersizeVideo > 5) && m_DecoderState == STATE_DECODING &&
+        int buffersizeAudio = m_AudioPlayer->getBufferSize();
+        while ((buffersizeVideo > 5 || buffersizeAudio > 5) && m_DecoderState == STATE_DECODING &&
                m_SeekPosition < 0) {
             buffersizeVideo = m_VideoPlayer->getBufferSize();
-//            buffersizeAudio = m_AudioDecoder->getBufferSize();
+            buffersizeAudio = m_AudioPlayer->getBufferSize();
             usleep(5 * 1000);
         }
         if (avPacket.stream_index == m_VideoPlayer->getStreamIdx()){
             m_VideoPlayer->pushAVPacket(&avPacket);
-        } else{
+        } else if (avPacket.stream_index == m_AudioPlayer->getStreamIdx()) {
+            m_AudioPlayer->pushAVPacket(&avPacket);
+        }else{
             av_packet_unref(&avPacket);
         }
         return 0;

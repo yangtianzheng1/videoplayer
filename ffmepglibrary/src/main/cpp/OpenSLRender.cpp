@@ -30,14 +30,58 @@ void OpenSLRender::init() {
             LOGE("OpenSLRender::Init CreateAudioPlayer fail. result=%d", result);
             break;
         }
-        (*m_AudioPlayerPlay)->SetPlayState(m_AudioPlayerPlay, SL_PLAYSTATE_PLAYING);
-//        AudioPlayerCallback(m_BufferQueue, this);
+        m_thread = new thread(CreateSLWaitingThread, this);
     } while (false);
 
     if(result != SL_RESULT_SUCCESS) {
         LOGE("OpenSLRender::Init fail. result=%d", result);
-        release();
+        unInit();
     }
+}
+
+void OpenSLRender::unInit(){
+    LOGE("OpenSLRender::UnInit");
+
+    if (m_AudioPlayerPlay) {
+        (*m_AudioPlayerPlay)->SetPlayState(m_AudioPlayerPlay, SL_PLAYSTATE_STOPPED);
+        m_AudioPlayerPlay = nullptr;
+    }
+
+    unique_lock<mutex> lock(m_Mutex);
+    m_Exit = true;
+    m_Cond.notify_all();
+    lock.unlock();
+
+    if (m_AudioPlayerObj) {
+        (*m_AudioPlayerObj)->Destroy(m_AudioPlayerObj);
+        m_AudioPlayerObj = nullptr;
+        m_BufferQueue = nullptr;
+    }
+
+    if (m_OutputMixObj) {
+        (*m_OutputMixObj)->Destroy(m_OutputMixObj);
+        m_OutputMixObj = nullptr;
+    }
+    if (m_EngineObj) {
+        (*m_EngineObj)->Destroy(m_EngineObj);
+        m_EngineObj = nullptr;
+        m_EngineEngine = nullptr;
+    }
+
+    lock.lock();
+    for (int i = 0; i < m_AudioFrameQueue.size(); ++i) {
+        AudioFrame *audioFrame = m_AudioFrameQueue.front();
+        m_AudioFrameQueue.pop();
+        delete audioFrame;
+    }
+    lock.unlock();
+
+    if(m_thread != nullptr){
+        m_thread->join();
+        delete m_thread;
+        m_thread = nullptr;
+    }
+
 }
 
 int OpenSLRender::createEngine() {
@@ -139,6 +183,19 @@ int OpenSLRender::CreateAudioPlayer() {
     return result;
 }
 
+void OpenSLRender::StartRender() {
+
+    while (GetAudioFrameQueueSize() < MAX_QUEUE_BUFFER_SIZE && !m_Exit) {
+        unique_lock<mutex> lock(m_Mutex);
+        m_Cond.wait_for(lock, chrono::milliseconds(10));
+        //m_Cond.wait(lock);
+        lock.unlock();
+    }
+
+    (*m_AudioPlayerPlay)->SetPlayState(m_AudioPlayerPlay, SL_PLAYSTATE_PLAYING);
+    AudioPlayerCallback(m_BufferQueue, this);
+}
+
 void OpenSLRender::AudioPlayerCallback(SLAndroidSimpleBufferQueueItf bufferQueue, void *context) {
     OpenSLRender *openSlRender = static_cast<OpenSLRender *>(context);
     openSlRender->HandleAudioFrameQueue();
@@ -147,6 +204,12 @@ void OpenSLRender::AudioPlayerCallback(SLAndroidSimpleBufferQueueItf bufferQueue
 void OpenSLRender::HandleAudioFrameQueue() {
     LOGE("OpenSLRender::HandleAudioFrameQueue QueueSize=%d", m_AudioFrameQueue.size());
     if (m_AudioPlayerPlay == nullptr) return;
+    while (GetAudioFrameQueueSize() < MAX_QUEUE_BUFFER_SIZE && !m_Exit) {
+        unique_lock<mutex> lock(m_Mutex);
+        m_Cond.wait_for(lock, chrono::milliseconds(10));
+    }
+    unique_lock<mutex> lock(m_Mutex);
+
     AudioFrame *audioFrame = m_AudioFrameQueue.front();
     if (nullptr != audioFrame && m_AudioPlayerPlay){
         SLresult result = (*m_BufferQueue)->Enqueue(m_BufferQueue, audioFrame->data, (SLuint32) audioFrame->dataSize);
@@ -155,6 +218,11 @@ void OpenSLRender::HandleAudioFrameQueue() {
             delete audioFrame;
         }
     }
+    lock.unlock();
+}
+
+void OpenSLRender::CreateSLWaitingThread(OpenSLRender *openSlRender) {
+    openSlRender->StartRender();
 }
 
 void OpenSLRender::RenderAudioFrame(uint8_t *pData, int dataSize) {
@@ -162,17 +230,32 @@ void OpenSLRender::RenderAudioFrame(uint8_t *pData, int dataSize) {
     if(m_AudioPlayerPlay) {
         if (pData != nullptr && dataSize > 0) {
             //temp resolution, when queue size is too big.
-            auto *audioFrame = new AudioFrame(pData, dataSize);
+            while(GetAudioFrameQueueSize() >= MAX_QUEUE_BUFFER_SIZE && !m_Exit)
+            {
+                this_thread::sleep_for(chrono::milliseconds(15));
+            }
+
+            unique_lock<mutex> lock(m_Mutex);
+            AudioFrame *audioFrame = new AudioFrame(pData, dataSize);
             m_AudioFrameQueue.push(audioFrame);
-            HandleAudioFrameQueue();
+            m_Cond.notify_all();
+            lock.unlock();
         }
     }
 }
 
-void OpenSLRender::release() {
-
-}
-
 int OpenSLRender::GetAudioFrameQueueSize() {
+    unique_lock<mutex> lock(m_Mutex);
     return m_AudioFrameQueue.size();
 }
+
+void OpenSLRender::ClearAudioCache() {
+    unique_lock<mutex> lock(m_Mutex);
+    for (int i = 0; i < m_AudioFrameQueue.size(); ++i) {
+        AudioFrame *audioFrame = m_AudioFrameQueue.front();
+        m_AudioFrameQueue.pop();
+        delete audioFrame;
+    }
+
+}
+
