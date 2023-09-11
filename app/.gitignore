@@ -1,1 +1,12 @@
 /build
+/.idea/
+
+/.gradle/
+
+/.settings/
+
+/build/
+
+.gitignore
+
+local.properties
