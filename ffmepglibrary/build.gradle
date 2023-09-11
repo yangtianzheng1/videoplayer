@@ -7,7 +7,7 @@ android {
 
     defaultConfig {
         minSdk 24
-        targetSdk 31
+        targetSdk 28
 
         externalNativeBuild {
             cmake{
