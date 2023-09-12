@@ -22,6 +22,13 @@
                 android:text="选择文件"/>
 
             <Button
+                android:id="@+id/btn_file2"
+                android:layout_width="200dp"
+                android:layout_height="60dp"
+                android:layout_marginTop="40dp"
+                android:text="选择第二个文件"/>
+
+            <Button
                 android:id="@+id/btn_codec1"
                 android:layout_width="200dp"
                 android:layout_height="60dp"
@@ -41,6 +48,20 @@
                 android:layout_height="60dp"
                 android:layout_marginTop="40dp"
                 android:text="简单GL渲染"/>
+
+            <Button
+                android:id="@+id/btn_gl2"
+                android:layout_width="200dp"
+                android:layout_height="60dp"
+                android:layout_marginTop="40dp"
+                android:text="GL 播放视频"/>
+
+            <Button
+                android:id="@+id/btn_gl3"
+                android:layout_width="200dp"
+                android:layout_height="60dp"
+                android:layout_marginTop="40dp"
+                android:text="GL 播放多路视频"/>
         </LinearLayout>
     </ScrollView>
 

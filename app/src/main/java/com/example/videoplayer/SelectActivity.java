@@ -21,8 +21,11 @@ import util.GetPathFromUri4kitkat;
 public class SelectActivity extends AppCompatActivity {
 
     public static final String videoPath = "path";
+    public static final String videoPath2 = "path2";
 
     private String mp4LocalPath;
+
+    private String mp4LocalPath2;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,6 +40,16 @@ public class SelectActivity extends AppCompatActivity {
                 intent.setType("video/mp4"); //选择视频 （mp4 3gp 是android支持的视频格式）
                 intent.addCategory(Intent.CATEGORY_OPENABLE);
                 startActivityForResult(intent, 1);
+            }
+        });
+
+        findViewById(R.id.btn_file2).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+                intent.setType("video/mp4"); //选择视频 （mp4 3gp 是android支持的视频格式）
+                intent.addCategory(Intent.CATEGORY_OPENABLE);
+                startActivityForResult(intent, 2);
             }
         });
 
@@ -63,6 +76,29 @@ public class SelectActivity extends AppCompatActivity {
             public void onClick(View v) {
                 Intent intent = new Intent(SelectActivity.this, SimpleRenderActivity.class);
                 startActivity(intent);
+            }
+        });
+
+        findViewById(R.id.btn_gl2).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(!mp4LocalPath.isEmpty()){
+                    Intent intent = new Intent(SelectActivity.this, OpenGLPlayerActivity.class);
+                    intent.putExtra(videoPath, mp4LocalPath);
+                    startActivity(intent);
+                }
+            }
+        });
+
+        findViewById(R.id.btn_gl3).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (!mp4LocalPath.isEmpty() && !mp4LocalPath2.isEmpty()){
+                    Intent intent = new Intent(SelectActivity.this, MultiOpenGLPlayerActivity.class);
+                    intent.putExtra(videoPath, mp4LocalPath);
+                    intent.putExtra(videoPath2, mp4LocalPath2);
+                    startActivity(intent);
+                }
             }
         });
 
@@ -95,6 +131,13 @@ public class SelectActivity extends AppCompatActivity {
             String path = getRealFilePath(data.getData());
             if (path != null) {
                 mp4LocalPath = path;
+            }
+        }
+
+        if (requestCode == 2 && resultCode == RESULT_OK) {
+            String path = getRealFilePath(data.getData());
+            if (path != null) {
+                mp4LocalPath2 = path;
             }
         }
     }

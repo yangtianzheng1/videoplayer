@@ -29,7 +29,8 @@ class SimpleRenderActivity : AppCompatActivity() {
 
     private fun initRender(){
         surface?.setEGLContextClientVersion(2)
-        val render = SimpleRender(drawer)
+        val render = SimpleRender()
+        render.addDrawer(drawer)
         surface?.setRenderer(render)
     }
 
