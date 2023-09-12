@@ -58,6 +58,14 @@ public class SelectActivity extends AppCompatActivity {
             }
         });
 
+        findViewById(R.id.btn_gl1).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(SelectActivity.this, SimpleRenderActivity.class);
+                startActivity(intent);
+            }
+        });
+
         requestMyPermissions();
     }
 
