@@ -62,6 +62,20 @@
                 android:layout_height="60dp"
                 android:layout_marginTop="40dp"
                 android:text="GL 播放多路视频"/>
+
+            <Button
+                android:id="@+id/btn_egl"
+                android:layout_width="200dp"
+                android:layout_height="60dp"
+                android:layout_marginTop="40dp"
+                android:text="EGL 播放多路视频"/>
+
+            <Button
+                android:id="@+id/btn_soul"
+                android:layout_width="200dp"
+                android:layout_height="60dp"
+                android:layout_marginTop="40dp"
+                android:text="播放特效视频"/>
         </LinearLayout>
     </ScrollView>
 

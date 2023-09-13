@@ -102,6 +102,29 @@ public class SelectActivity extends AppCompatActivity {
             }
         });
 
+        findViewById(R.id.btn_egl).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (!mp4LocalPath.isEmpty() && !mp4LocalPath2.isEmpty()){
+                    Intent intent = new Intent(SelectActivity.this, EGLPlayerActivity.class);
+                    intent.putExtra(videoPath, mp4LocalPath);
+                    intent.putExtra(videoPath2, mp4LocalPath2);
+                    startActivity(intent);
+                }
+            }
+        });
+
+        findViewById(R.id.btn_soul).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (!mp4LocalPath.isEmpty()){
+                    Intent intent = new Intent(SelectActivity.this, SoulPlayerActivity.class);
+                    intent.putExtra(videoPath, mp4LocalPath);
+                    startActivity(intent);
+                }
+            }
+        });
+
         requestMyPermissions();
     }
 
@@ -130,6 +153,7 @@ public class SelectActivity extends AppCompatActivity {
         if (requestCode == 1 && resultCode == RESULT_OK) {
             String path = getRealFilePath(data.getData());
             if (path != null) {
+                Log.e("mp4Path", path);
                 mp4LocalPath = path;
             }
         }

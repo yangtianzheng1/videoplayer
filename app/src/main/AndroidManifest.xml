@@ -14,6 +14,12 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.VideoPlayer">
         <activity
+            android:name=".SoulPlayerActivity"
+            android:exported="false" />
+        <activity
+            android:name=".EGLPlayerActivity"
+            android:exported="false" />
+        <activity
             android:name=".MultiOpenGLPlayerActivity"
             android:exported="false" />
         <activity
