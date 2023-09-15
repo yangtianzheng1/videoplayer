@@ -3,6 +3,7 @@ package com.example.videoplayer.decoder
 import android.media.MediaCodec
 import android.media.MediaFormat
 import android.util.Log
+import com.example.videoplayer.Frame
 import com.example.videoplayer.extractor.IExtractor
 import java.io.File
 import java.nio.ByteBuffer
@@ -129,6 +130,12 @@ abstract class BaseDecoder(private val mFilePath: String):IDecoder {
                     if (mSyncRender) {// 如果只是用于编码合成新视频，无需渲染
                         render(mOutputBuffers!![index], mBufferInfo)
                     }
+
+                    //将解码数据传递出去
+                    val frame = Frame()
+                    frame.buffer = mOutputBuffers!![index]
+                    frame.setBufferInfo(mBufferInfo)
+                    mStateListener?.decodeOneFrame(this, frame)
 
                     //【解码步骤：5. 释放输出缓冲】
                     mCodec!!.releaseOutputBuffer(index, true)

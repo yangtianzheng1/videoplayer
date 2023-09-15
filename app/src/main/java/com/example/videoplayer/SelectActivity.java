@@ -125,6 +125,17 @@ public class SelectActivity extends AppCompatActivity {
             }
         });
 
+        findViewById(R.id.btn_create).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (!mp4LocalPath.isEmpty()){
+                    Intent intent = new Intent(SelectActivity.this, SynthesizerActivity.class);
+                    intent.putExtra(videoPath, mp4LocalPath);
+                    startActivity(intent);
+                }
+            }
+        });
+
         requestMyPermissions();
     }
 

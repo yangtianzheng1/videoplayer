@@ -2,6 +2,7 @@ package com.example.videoplayer.opengl.render
 
 import android.opengl.EGLExt.EGL_RECORDABLE_ANDROID
 import android.opengl.GLES20
+import android.view.Surface
 import android.view.SurfaceHolder
 import android.view.SurfaceView
 import android.view.View
@@ -17,6 +18,8 @@ class CustomerGLRenderer:SurfaceHolder.Callback {
 
     //页面上的SurfaceView弱引用
     private var mSurfaceView: WeakReference<SurfaceView>? = null
+
+    private var mSurface: Surface? = null
 
     //所有的绘制器
     private val mDrawers = mutableListOf<IDrawer>()
@@ -34,13 +37,31 @@ class CustomerGLRenderer:SurfaceHolder.Callback {
 
         surface.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener{
             override fun onViewDetachedFromWindow(v: View?) {
-                mThread.onSurfaceStop()
+                stop()
             }
 
             override fun onViewAttachedToWindow(v: View?) {
             }
         })
     }
+
+    // 新增设置Surface接口
+    fun setSurface(surface: Surface, width: Int, height: Int) {
+        mSurface = surface
+        mThread.onSurfaceCreate()
+        mThread.onSurfaceChange(width, height)
+    }
+
+    // 新增设置渲染模式 RenderMode见下面
+    fun setRenderMode(mode: RenderMode) {
+        mThread.setRenderMode(mode)
+    }
+
+    // 新增通知更新画面方法
+    fun notifySwap(timeUs: Long) {
+        mThread.notifySwap(timeUs)
+    }
+
 
     /**
      * 添加绘制器
@@ -49,8 +70,14 @@ class CustomerGLRenderer:SurfaceHolder.Callback {
         mDrawers.add(drawer)
     }
 
+    fun stop() {
+        mThread.onSurfaceStop()
+        mSurface = null
+    }
+
 
     override fun surfaceCreated(holder: SurfaceHolder) {
+        mSurface  = holder.surface
         mThread.onSurfaceCreate()
     }
 
@@ -78,6 +105,12 @@ class CustomerGLRenderer:SurfaceHolder.Callback {
 
         private val mWaitLock = Object()
 
+        private var mRenderMode = RenderMode.RENDER_WHEN_DIRTY
+
+        private var mCurTimestamp = 0L
+
+        private var mLastTimestamp = 0L
+
         private fun holdOn() {
             synchronized(mWaitLock) {
                 mWaitLock.wait()
@@ -90,6 +123,10 @@ class CustomerGLRenderer:SurfaceHolder.Callback {
             }
         }
 
+        fun setRenderMode(mode: RenderMode) {
+            mRenderMode = mode
+        }
+
         fun onSurfaceCreate() {
             mState = RenderState.FRESH_SURFACE
             notifyGo()
@@ -99,6 +136,13 @@ class CustomerGLRenderer:SurfaceHolder.Callback {
             mWidth = width
             mHeight = height
             mState = RenderState.SURFACE_CHANGE
+            notifyGo()
+        }
+
+        fun notifySwap(timeUs: Long) {
+            synchronized(mCurTimestamp) {
+                mCurTimestamp = timeUs
+            }
             notifyGo()
         }
 
@@ -130,7 +174,9 @@ class CustomerGLRenderer:SurfaceHolder.Callback {
                     }
                     RenderState.RENDERING ->{
                         render()
-                        sleep(20)
+                        if (mRenderMode == RenderMode.RENDER_WHEN_DIRTY) {
+                            holdOn()
+                        }
                     }
                     RenderState.SURFACE_DESTROY ->{
                         //【5】销毁EGLSurface，并解绑上下文
@@ -144,6 +190,9 @@ class CustomerGLRenderer:SurfaceHolder.Callback {
                     }else ->{
                         holdOn()
                     }
+                }
+                if (mRenderMode == RenderMode.RENDER_CONTINUOUSLY) {
+                    sleep(16)
                 }
             }
         }
@@ -189,13 +238,29 @@ class CustomerGLRenderer:SurfaceHolder.Callback {
         }
 
         private fun render() {
-            GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT or GLES20.GL_DEPTH_BUFFER_BIT)
-            mDrawers.forEach { it.draw() }
-            mEGLSurface?.swapBuffers()
+            val render = if (mRenderMode == RenderMode.RENDER_CONTINUOUSLY) {
+                true
+            } else {
+                synchronized(mCurTimestamp) {
+                    if (mCurTimestamp > mLastTimestamp) {
+                        mLastTimestamp = mCurTimestamp
+                        true
+                    } else {
+                        false
+                    }
+                }
+            }
+
+            if (render) {
+                GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT or GLES20.GL_DEPTH_BUFFER_BIT)
+                mDrawers.forEach { it.draw() }
+                mEGLSurface?.setTimestamp(mCurTimestamp)
+                mEGLSurface?.swapBuffers()
+            }
         }
 
         private fun createEGLSurface() {
-            mEGLSurface?.createEGLSurface(mSurfaceView?.get()?.holder?.surface)
+            mEGLSurface?.createEGLSurface(mSurface)
             mEGLSurface?.makeCurrent()
         }
     }
@@ -210,6 +275,13 @@ class CustomerGLRenderer:SurfaceHolder.Callback {
         RENDERING, //初始化完毕，可以开始渲染
         SURFACE_DESTROY, //surface销毁
         STOP //停止绘制
+    }
+
+    enum class RenderMode {
+        // 自动循环渲染
+        RENDER_CONTINUOUSLY,
+        // 由外部通过notifySwap通知渲染
+        RENDER_WHEN_DIRTY
     }
 
 }
