@@ -10,6 +10,8 @@
 #include <android/native_window.h>
 #include <android/native_window_jni.h>
 
+#include "media/decoder/base_decoder.h"
+
 
 extern "C" {
 #include "include/libavcodec/avcodec.h"

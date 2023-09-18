@@ -69,6 +69,11 @@ add_library(
         src/main/cpp/OpenSLRender.cpp
         src/main/cpp/OpenSLRender.h
         src/main/cpp/AudioFrame.h
+
+        src/main/cpp/media/decoder/base_decoder.h
+        src/main/cpp/media/decoder/base_decoder.cpp
+        src/main/cpp/media/decoder/decode_state.h
+        src/main/cpp/media/decoder/i_decoder.h
 )
 # 指定编译目标库时，cmake要链接的库
 target_link_libraries(
