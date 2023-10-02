@@ -3,8 +3,18 @@
 //
 
 #include "base_decoder.h"
-#include "libavutil/time.h"
 #include "../one_frame.h"
+
+extern "C"{
+#include "libavutil/time.h"
+}
+
+
+BaseDecoder::BaseDecoder(JNIEnv *env, jstring path, bool for_synthesizer)
+        : m_for_synthesizer(for_synthesizer) {
+    Init(env, path);
+    CreateDecodeThread();
+}
 
 BaseDecoder::BaseDecoder(JNIEnv *env, jstring path) {
     Init(env, path);
@@ -145,7 +155,9 @@ void BaseDecoder::LoopDecode() {
         if (m_state != DECODING &&
             m_state != START &&
             m_state != STOP) {
+            CallbackState(m_state);
             Wait();
+            CallbackState(m_state);
             // 恢复同步起始时间，去除等待流失的时间
             m_started_t = GetCurMsTime() - m_cur_t_s;
         }
@@ -207,7 +219,7 @@ AVFrame* BaseDecoder::DecodeOneFrame() {
                 av_packet_unref(m_packet);
                 return m_frame;
             } else {
-                LOG_INFO(TAG, LogSpec(), "Receive frame error result: %d", av_err2str(AVERROR(result)))
+                LOG_INFO(TAG, LogSpec(), "Receive frame error result: %s", av_err2str(AVERROR(result)))
             }
         }
         // 释放packet
@@ -219,8 +231,34 @@ AVFrame* BaseDecoder::DecodeOneFrame() {
     return nullptr;
 }
 
+void BaseDecoder::DoneDecode(JNIEnv *env) {
+    LOG_INFO(TAG, LogSpec(), "Decode done and decoder release")
+    if (m_packet != nullptr){
+        av_packet_free(&m_packet);
+    }
+    if (m_frame != nullptr) {
+        av_frame_free(&m_frame);
+    }
+    if (m_codec_ctx != nullptr){
+        avcodec_close(m_codec_ctx);
+        avcodec_free_context(&m_codec_ctx);
+    }
+
+    if (m_format_ctx != nullptr){
+        avformat_close_input(&m_format_ctx);
+        avformat_free_context(m_format_ctx);
+    }
+
+    if (m_path_ref != nullptr && m_path != nullptr){
+        env->ReleaseStringUTFChars((jstring)m_path_ref, m_path);
+        env->DeleteGlobalRef(m_path_ref);
+    }
+
+    Release();
+}
+
 void BaseDecoder::CallbackState(DecodeState status) {
-    if (m_state_cb != NULL) {
+    if (m_state_cb != nullptr) {
         switch (status) {
             case PREPARE:
                 m_state_cb->DecodePrepare(this);
@@ -242,6 +280,76 @@ void BaseDecoder::CallbackState(DecodeState status) {
                 break;
         }
     }
+}
+
+void BaseDecoder::ObtainTimeStamp() {
+    if (m_frame->pkt_dts != AV_NOPTS_VALUE){
+        m_cur_t_s = m_packet->dts;
+    } else if (m_frame->pts != AV_NOPTS_VALUE){
+        m_cur_t_s = m_frame->pts;
+    } else{
+        m_cur_t_s = 0;
+    }
+    m_cur_t_s = (int64_t)((m_cur_t_s * av_q2d(m_format_ctx->streams[m_stream_index]->time_base)) * 1000);
+}
+
+void BaseDecoder::SyncRender() {
+    if (ForSynthesizer()){
+        return;
+    }
+    int64_t ct = GetCurMsTime();
+    int64_t passTime = ct - m_started_t;
+    if (m_cur_t_s > passTime) {
+        av_usleep((unsigned int)((m_cur_t_s - passTime) * 1000));
+    }
+}
+
+void BaseDecoder::Wait(long second, long ms) {
+    pthread_mutex_lock(&m_mutex);
+    if (second > 0|| ms > 0){
+        timeval now;
+        timespec outtime;
+        gettimeofday(&now, nullptr);
+        int64_t destNSec = now.tv_usec * 1000 + ms * 1000000;
+        outtime.tv_sec = static_cast<__kernel_time_t>(now.tv_sec + second + destNSec / 1000000000);
+        outtime.tv_nsec = static_cast<long>(destNSec % 1000000000);
+        pthread_cond_timedwait(&m_cond, &m_mutex, &outtime);
+    } else{
+        pthread_cond_wait(&m_cond, &m_mutex);
+    }
+    pthread_mutex_unlock(&m_mutex);
+}
+
+void BaseDecoder::SendSignal() {
+    pthread_mutex_lock(&m_mutex);
+    pthread_cond_signal(&m_cond);
+    pthread_mutex_unlock(&m_mutex);
+}
+
+void BaseDecoder::GoOn() {
+    m_state = DECODING;
+    SendSignal();
+}
+
+void BaseDecoder::Pause() {
+    m_state = PAUSE;
+}
+
+void BaseDecoder::Stop() {
+    m_state = STOP;
+    SendSignal();
+}
+
+bool BaseDecoder::IsRunning() {
+    return DECODING == m_state;
+}
+
+long BaseDecoder::GetDuration() {
+    return m_duration;
+}
+
+long BaseDecoder::GetCurPos() {
+    return (long)m_cur_t_s;
 }
 
 

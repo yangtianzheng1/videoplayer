@@ -11,12 +11,17 @@
 #include <android/native_window_jni.h>
 
 #include "media/decoder/base_decoder.h"
+#include "media/decoder/v_decoder.h"
+#include "media/render/video/video_render.h"
+#include "media/render/video/native_render.h"
+#include "media/player/player.h"
 
 
 extern "C" {
-#include "include/libavcodec/avcodec.h"
-#include "include/libavformat/avformat.h"
-#include "include/libavcodec/jni.h"
+#include <libavcodec/avcodec.h>
+#include <libavformat/avformat.h>
+#include <libavfilter/avfilter.h>
+#include <libavcodec/jni.h>
 }
 
 #define JNI_FUNC(retType, bindClass, name)  JNIEXPORT retType JNICALL Java_com_example_ffmepglibrary_##bindClass##_##name
@@ -24,6 +29,8 @@ extern "C" {
 
 VideoPlayer *videoPlayer;
 AudioPlayer *audioPlayer;
+
+VideoDecoder *videoDecoder;
 
 extern "C" {
 JNI_FUNC(jstring, FFmepgHelper, getFFmpegVersion)(JNI_ARGS) {
@@ -56,4 +63,23 @@ JNI_FUNC(void, VideoPlayer, release)(JNI_ARGS) {
 //    videoPlayer->release();
     audioPlayer->release();
 }
+}
+extern "C"
+JNIEXPORT jlong JNICALL
+Java_com_example_videoplayer_FFmpegActivity_createPlayer(JNIEnv *env, jobject thiz, jstring path,
+                                                         jobject surface) {
+    auto player = new Player(env, path, surface);
+    return (jlong) player;
+}
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_example_videoplayer_FFmpegActivity_play(JNIEnv *env, jobject thiz, jlong player) {
+    auto *p = (Player *) player;
+    p->play();
+}
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_example_videoplayer_FFmpegActivity_pause(JNIEnv *env, jobject thiz, jlong player) {
+    auto *p = (Player *) player;
+    p->pause();
 }

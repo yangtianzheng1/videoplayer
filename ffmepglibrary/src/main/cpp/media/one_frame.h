@@ -8,7 +8,7 @@
 #include <malloc.h>
 #include "../utils/logger.h"
 extern "C"{
-#include "../include/libavutil/rational.h"
+#include <libavutil/rational.h>
 };
 
 class OneFrame{
@@ -30,6 +30,7 @@ public:
         this->ext_data = ext_data;
         this->autoRecycle = autoRecycle;
     }
+
     ~OneFrame() {
         if (autoRecycle) {
             if (data != nullptr) {

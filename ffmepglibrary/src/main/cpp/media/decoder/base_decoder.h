@@ -65,7 +65,6 @@ private:
 
     bool m_for_synthesizer = false;
 
-
     /**
     * 初始化
     * @param env jvm环境
@@ -114,8 +113,12 @@ protected:
 
     IDecodeStateCb *m_state_cb = nullptr;
 
+    const char * path() {
+        return m_path;
+    }
+
     // 进入等待
-    void Wait(long second = 0);
+    void Wait(long second = 0, long ms = 0);
 
     //恢复解码
     void SendSignal();
@@ -170,9 +173,47 @@ protected:
         return m_for_synthesizer;
     }
 
+    /**
+    * 获取解码时间基
+    */
+    AVRational time_base() {
+        return m_format_ctx->streams[m_stream_index]->time_base;
+    }
+
+    /**
+    * 解码器上下文
+    * @return
+    */
+    AVCodecContext *codec_cxt() {
+        return m_codec_ctx;
+    }
+
+    /**
+   * 视频数据编码格式
+   * @return
+   */
+    AVPixelFormat video_pixel_format() {
+        return m_codec_ctx->pix_fmt;
+    }
+
+
 public:
 
     BaseDecoder(JNIEnv *env, jstring path);
+
+    BaseDecoder(JNIEnv *env, jstring path, bool for_synthesizer);
+
+    int width(){
+        return m_codec_ctx->width;
+    }
+
+    int height(){
+        return m_codec_ctx->height;
+    }
+
+    long duration() {
+        return m_duration;
+    }
 
     virtual ~BaseDecoder();
 
@@ -193,6 +234,21 @@ public:
         gettimeofday(&tv, nullptr);
         int64_t ts = (int64_t)tv.tv_sec * 1000 + tv.tv_usec / 1000;
         return ts;
+    }
+
+    void SetStateReceiver(IDecodeStateCb *cb) override {
+        m_state_cb = cb;
+    }
+
+    char *GetStateStr() {
+        switch (m_state) {
+            case STOP: return (char *)"STOP";
+            case START: return (char *)"START";
+            case DECODING: return (char *)"DECODING";
+            case PAUSE: return (char *)"PAUSE";
+            case FINISH: return (char *)"FINISH";
+            default: return (char *)"UNKNOW";
+        }
     }
 
 };

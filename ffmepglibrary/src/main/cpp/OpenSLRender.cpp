@@ -145,7 +145,7 @@ void OpenSLRender::AudioPlayerCallback(SLAndroidSimpleBufferQueueItf bufferQueue
 }
 
 void OpenSLRender::HandleAudioFrameQueue() {
-    LOGE("OpenSLRender::HandleAudioFrameQueue QueueSize=%d", m_AudioFrameQueue.size());
+    LOGE("OpenSLRender::HandleAudioFrameQueue QueueSize=%zu", m_AudioFrameQueue.size());
     if (m_AudioPlayerPlay == nullptr) return;
     AudioFrame *audioFrame = m_AudioFrameQueue.front();
     if (nullptr != audioFrame && m_AudioPlayerPlay){
