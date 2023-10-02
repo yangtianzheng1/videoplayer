@@ -78,12 +78,19 @@ add_library(
         src/main/cpp/media/decoder/i_decode_state_cb.h
         src/main/cpp/media/decoder/i_decoder.h
         src/main/cpp/media/one_frame.h
+        src/main/cpp/media/const.h
 
         src/main/cpp/media/render/video/video_render.h
 #        src/main/cpp/media/render/video/native_render.h
         src/main/cpp/media/render/video/native_render.cpp
 #        src/main/cpp/media/player/player.h
         src/main/cpp/media/player/player.cpp
+
+
+        src/main/cpp/media/render/audio/audio_render.h
+        src/main/cpp/media/render/audio/opensl_render.cpp
+        src/main/cpp/media/decoder/a_decoder.cpp
+        src/main/cpp/media/decoder/a_decoder.cpp
 )
 # 指定编译目标库时，cmake要链接的库
 target_link_libraries(

@@ -15,6 +15,9 @@
 #include "media/render/video/video_render.h"
 #include "media/render/video/native_render.h"
 #include "media/player/player.h"
+#include "media/render/audio/audio_render.h"
+#include "media/render/audio/opensl_render.h"
+#include "media/const.h"
 
 
 extern "C" {

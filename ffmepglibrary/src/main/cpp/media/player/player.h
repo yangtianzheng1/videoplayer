@@ -7,12 +7,16 @@
 
 
 #include "../decoder/v_decoder.h"
+#include "../decoder/a_decoder.h"
 
 class Player {
 
 private:
     VideoDecoder *m_v_decoder;
     VideoRender *m_v_render;
+
+    AudioDecoder *m_a_decoder;
+    AudioRender *m_a_render;
 
 public:
 
