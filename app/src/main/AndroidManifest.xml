@@ -14,6 +14,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.VideoPlayer">
         <activity
+            android:name=".FFmpegGLPlayerActivity"
+            android:exported="false" />
+        <activity
             android:name=".FFmpegActivity"
             android:exported="false" />
         <activity

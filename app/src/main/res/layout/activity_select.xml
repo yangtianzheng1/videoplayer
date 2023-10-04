@@ -90,6 +90,13 @@
                 android:layout_height="60dp"
                 android:layout_marginTop="40dp"
                 android:text="ffmpeg 播放视频"/>
+
+            <Button
+                android:id="@+id/btn_ffmpeg_gl_play"
+                android:layout_width="200dp"
+                android:layout_height="60dp"
+                android:layout_marginTop="40dp"
+                android:text="ffmpeg opengl 播放"/>
         </LinearLayout>
     </ScrollView>
 

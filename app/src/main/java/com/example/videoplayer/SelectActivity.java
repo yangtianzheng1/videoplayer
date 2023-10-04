@@ -145,6 +145,15 @@ public class SelectActivity extends AppCompatActivity {
             }
         });
 
+        findViewById(R.id.btn_ffmpeg_gl_play).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(SelectActivity.this, FFmpegGLPlayerActivity.class);
+                intent.putExtra(videoPath, mp4LocalPath);
+                startActivity(intent);
+            }
+        });
+
         requestMyPermissions();
     }
 

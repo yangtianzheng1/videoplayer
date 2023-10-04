@@ -44,7 +44,7 @@ void AudioDecoder::InitSwr() {
 
     swr_init(m_swr);
 
-    LOGI(TAG, "sample rate: %d, channel: %d, format: %d, frame_size: %d, layout: %lld",
+    LOGI(TAG, "sample rate: %d, channel: %d, format: %d, frame_size: %d, layout: %lu",
          codeCtx->sample_rate, codeCtx->channels, codeCtx->sample_fmt, codeCtx->frame_size,codeCtx->channel_layout)
 
 }
@@ -56,7 +56,7 @@ void AudioDecoder::CalculateSampleArgs() {
 
     // 重采样后一帧数据的大小
     m_dest_data_size = (size_t)av_samples_get_buffer_size(
-            NULL, ENCODE_AUDIO_DEST_CHANNEL_COUNTS,
+            nullptr, ENCODE_AUDIO_DEST_CHANNEL_COUNTS,
             m_dest_nb_sample, GetSampleFmt(), 1);
 }
 
@@ -87,7 +87,7 @@ void AudioDecoder::Render(AVFrame *frame) {
 
     if (ret > 0) {
         if (ForSynthesizer()) {
-            if (m_state_cb != NULL) {
+            if (m_state_cb != nullptr) {
                 OneFrame *one_frame = new OneFrame(m_out_buffer[0], m_dest_data_size, frame->pts,
                                                    time_base(), m_out_buffer[1], true);
                 if (m_state_cb->DecodeOneFrame(this, one_frame)) {

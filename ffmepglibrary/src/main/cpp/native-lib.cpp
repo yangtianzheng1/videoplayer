@@ -18,6 +18,7 @@
 #include "media/render/audio/audio_render.h"
 #include "media/render/audio/opensl_render.h"
 #include "media/const.h"
+#include "media/player/gl_player.h"
 
 
 extern "C" {
@@ -85,4 +86,25 @@ JNIEXPORT void JNICALL
 Java_com_example_videoplayer_FFmpegActivity_pause(JNIEnv *env, jobject thiz, jlong player) {
     auto *p = (Player *) player;
     p->pause();
+}
+extern "C"
+JNIEXPORT jlong JNICALL
+Java_com_example_videoplayer_FFmpegGLPlayerActivity_createGLPlayer(JNIEnv *env, jobject thiz,
+                                                                   jstring path, jobject surface) {
+    GlPlayer *player = new GlPlayer(env, path);
+    player->SetSurface(surface);
+    return (jlong) player;
+}
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_example_videoplayer_FFmpegGLPlayerActivity_playOrPause(JNIEnv *env, jobject thiz,
+                                                                jlong player) {
+    GlPlayer *p = (GlPlayer *) player;
+    p->PlayOrPause();
+}
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_example_videoplayer_FFmpegGLPlayerActivity_stop(JNIEnv *env, jobject thiz, jlong player) {
+        GlPlayer *p = (GlPlayer *) player;
+        p->Release();
 }

@@ -90,7 +90,15 @@ add_library(
         src/main/cpp/media/render/audio/audio_render.h
         src/main/cpp/media/render/audio/opensl_render.cpp
         src/main/cpp/media/decoder/a_decoder.cpp
-        src/main/cpp/media/decoder/a_decoder.cpp
+
+        src/main/cpp/opengl/egl/egl_core.cpp
+        src/main/cpp/opengl/egl/egl_surface.cpp
+        src/main/cpp/media/render/video/opengl_render.cpp
+        src/main/cpp/opengl/drawer/drawer.cpp
+        src/main/cpp/opengl/drawer/video_drawer.cpp
+        src/main/cpp/opengl/drawer/proxy/drawer_proxy.cpp
+        src/main/cpp/opengl/drawer/proxy/def_drawer_proxy_impl.cpp
+        src/main/cpp/media/player/gl_player.cpp
 )
 # 指定编译目标库时，cmake要链接的库
 target_link_libraries(
@@ -109,5 +117,7 @@ target_link_libraries(
         #android NDK 代码
         OpenSLES
         android
+        EGL
+        GLESv2
 
         ${log-lib} )
