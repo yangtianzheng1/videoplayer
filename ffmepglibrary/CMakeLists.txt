@@ -99,6 +99,8 @@ add_library(
         src/main/cpp/opengl/drawer/proxy/drawer_proxy.cpp
         src/main/cpp/opengl/drawer/proxy/def_drawer_proxy_impl.cpp
         src/main/cpp/media/player/gl_player.cpp
+
+        src/main/cpp/media/muxer/ff_repack.cpp
 )
 # 指定编译目标库时，cmake要链接的库
 target_link_libraries(

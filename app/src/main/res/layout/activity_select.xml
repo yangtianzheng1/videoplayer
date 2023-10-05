@@ -97,6 +97,13 @@
                 android:layout_height="60dp"
                 android:layout_marginTop="40dp"
                 android:text="ffmpeg opengl 播放"/>
+
+            <Button
+                android:id="@+id/btn_ffmpeg_repack"
+                android:layout_width="200dp"
+                android:layout_height="60dp"
+                android:layout_marginTop="40dp"
+                android:text="ffmpeg 视频重新打包"/>
         </LinearLayout>
     </ScrollView>
 

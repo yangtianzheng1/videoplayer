@@ -19,6 +19,7 @@
 #include "media/render/audio/opensl_render.h"
 #include "media/const.h"
 #include "media/player/gl_player.h"
+#include "media/muxer/ff_repack.h"
 
 
 extern "C" {
@@ -107,4 +108,17 @@ JNIEXPORT void JNICALL
 Java_com_example_videoplayer_FFmpegGLPlayerActivity_stop(JNIEnv *env, jobject thiz, jlong player) {
         GlPlayer *p = (GlPlayer *) player;
         p->Release();
+}
+extern "C"
+JNIEXPORT jlong JNICALL
+Java_com_example_videoplayer_FFRepackActivity_createRepack(JNIEnv *env, jobject thiz,
+                                                           jstring src_path, jstring dest_path) {
+    FFRepack *repack = new FFRepack(env, src_path, dest_path);
+    return (jlong) repack;
+}
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_example_videoplayer_FFRepackActivity_startRepack(JNIEnv *env, jobject thiz, jlong repack) {
+    FFRepack *ffRepack = (FFRepack *) repack;
+    ffRepack->Start();
 }

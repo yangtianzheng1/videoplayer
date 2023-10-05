@@ -154,6 +154,15 @@ public class SelectActivity extends AppCompatActivity {
             }
         });
 
+        findViewById(R.id.btn_ffmpeg_repack).setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(SelectActivity.this, FFRepackActivity.class);
+                intent.putExtra(videoPath, mp4LocalPath);
+                startActivity(intent);
+            }
+        });
+
         requestMyPermissions();
     }
 
