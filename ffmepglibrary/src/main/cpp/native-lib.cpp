@@ -10,16 +10,17 @@
 #include <android/native_window.h>
 #include <android/native_window_jni.h>
 
-#include "media/decoder/base_decoder.h"
-#include "media/decoder/v_decoder.h"
-#include "media/render/video/video_render.h"
-#include "media/render/video/native_render.h"
+//#include "media/decoder/base_decoder.h"
+//#include "media/decoder/v_decoder.h"
+//#include "media/render/video/video_render.h"
+//#include "media/render/video/native_render.h"
 #include "media/player/player.h"
-#include "media/render/audio/audio_render.h"
-#include "media/render/audio/opensl_render.h"
-#include "media/const.h"
+//#include "media/render/audio/audio_render.h"
+//#include "media/render/audio/opensl_render.h"
+//#include "media/const.h"
 #include "media/player/gl_player.h"
 #include "media/muxer/ff_repack.h"
+#include "media/synthesizer/synthesizer.h"
 
 
 extern "C" {
@@ -121,4 +122,25 @@ JNIEXPORT void JNICALL
 Java_com_example_videoplayer_FFRepackActivity_startRepack(JNIEnv *env, jobject thiz, jlong repack) {
     FFRepack *ffRepack = (FFRepack *) repack;
     ffRepack->Start();
+}
+extern "C"
+JNIEXPORT jlong JNICALL
+Java_com_example_videoplayer_FFEncodeActivity_initEncoder(JNIEnv *env, jobject thiz,
+                                                          jstring src_path, jstring dest_path) {
+    Synthesizer *synthesizer = new Synthesizer(env, src_path, dest_path);
+    return (jlong)synthesizer;
+}
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_example_videoplayer_FFEncodeActivity_startEncoder(JNIEnv *env, jobject thiz,
+                                                           jlong encoder) {
+    Synthesizer *s =  (Synthesizer *)encoder;
+    s->Start();
+}
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_example_videoplayer_FFEncodeActivity_releaseEncoder(JNIEnv *env, jobject thiz,
+                                                             jlong encoder) {
+    Synthesizer *s =  (Synthesizer *)encoder;
+    delete s;
 }

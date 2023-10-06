@@ -101,6 +101,17 @@ add_library(
         src/main/cpp/media/player/gl_player.cpp
 
         src/main/cpp/media/muxer/ff_repack.cpp
+
+        src/main/cpp/media/encoder/i_encoder.h
+        src/main/cpp/media/encoder/i_encode_state_cb.h
+        src/main/cpp/media/encoder/base_encoder.cpp
+        src/main/cpp/media/encoder/v_encoder.cpp
+        src/main/cpp/media/encoder/a_encoder.cpp
+        src/main/cpp/media/render/video/opengl_pixel_receiver.h
+        src/main/cpp/media/muxer/mp4_muxer.cpp
+        src/main/cpp/media/muxer/i_muxer_cb.h
+        src/main/cpp/media/synthesizer/synthesizer.cpp
+        src/main/cpp/media/decoder/i_decode_state_cb.cpp
 )
 # 指定编译目标库时，cmake要链接的库
 target_link_libraries(

@@ -104,6 +104,13 @@
                 android:layout_height="60dp"
                 android:layout_marginTop="40dp"
                 android:text="ffmpeg 视频重新打包"/>
+
+            <Button
+                android:id="@+id/btn_ffmpeg_codec"
+                android:layout_width="200dp"
+                android:layout_height="60dp"
+                android:layout_marginTop="40dp"
+                android:text="ffmpeg 视频重新编码"/>
         </LinearLayout>
     </ScrollView>
 
