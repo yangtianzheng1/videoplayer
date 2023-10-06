@@ -53,6 +53,13 @@ add_library( swscale
 set_target_properties( swscale
         PROPERTIES IMPORTED_LOCATION
         ${LIBS_DIR}/libswscale.so)
+
+add_library( x264.164
+        SHARED
+        IMPORTED)
+set_target_properties( x264.164
+        PROPERTIES IMPORTED_LOCATION
+        ${LIBS_DIR}/libx264.164.so)
 # 查找代码中使用到的系统库
 find_library(
         log-lib
@@ -124,6 +131,8 @@ target_link_libraries(
         avfilter
         swscale
         avformat
+        x264.164
+
         # Links the target library to the log library
         # included in the NDK.
 
